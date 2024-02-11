@@ -44,8 +44,8 @@ func (q queue) isEmpty() bool {
 }
 
 // newQueue creates a new queue with the given start position.
-func newQueue(start Point) queue {
-	return queue{items: []queueItem{{position: start, velocity: Velocity{0, 0}, hops: 0, visited: map[string]struct{}{start.Key(): {}}}}}
+func newQueue(start Point) *queue {
+	return &queue{items: []queueItem{{position: start, velocity: Velocity{0, 0}, hops: 0, visited: map[string]struct{}{start.Key(): {}}}}}
 }
 
 // Count returns the number of items in the queue.

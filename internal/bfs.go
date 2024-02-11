@@ -1,9 +1,5 @@
 package internal
 
-import (
-	"log"
-)
-
 // isValidGrid checks if the grid dimensions, start and finish points, and obstacles are valid.
 func isValidGrid(start, finish Point, obstacles []Point, width, height int) bool {
 	const maxGridSize = 30
@@ -50,7 +46,6 @@ func BFS(start, finish Point, obstacles []Point, width, height int) int {
 
 	for !queue.isEmpty() {
 		current := queue.dequeue()
-		log.Printf("Elements in queue: %v", queue.Count())
 
 		if current.position.IsEqual(finish) { // Hooray! We reached the end point
 			printhPath(start, current, height, width)
@@ -116,4 +111,14 @@ func (vg *visitedGen) isVisited(gen int, p Point) bool {
 	}
 
 	return false
+}
+
+// sign returns the sign of an integer
+func sign(x int) int {
+	if x > 0 {
+		return 1
+	} else if x < 0 {
+		return -1
+	}
+	return 0
 }
