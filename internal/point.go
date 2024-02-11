@@ -22,10 +22,15 @@ func (p Point) IsOccupied(obstacles []Point) bool {
 	return false
 }
 
+func (p Point) IsOccupiedMap(obstacles map[string]Point) bool {
+	_, ok := obstacles[p.Key()]
+	return ok
+}
+
 // NewPoint creates a new point with the given x and y coordinates.
 func (p Point) Key() string {
 	const delimiter = "-"
-	return fmt.Sprint(p.X) + delimiter + fmt.Sprint(p.Y)
+	return fmt.Sprintf("%d%s%d", p.X, delimiter, p.Y)
 }
 
 // NewPoint creates a new point with the given x and y coordinates.

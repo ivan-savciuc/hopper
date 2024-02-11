@@ -1,5 +1,7 @@
 package internal
 
+import "sync"
+
 // isValidGrid checks if the grid dimensions, start and finish points, and obstacles are valid.
 func isValidGrid(start, finish Point, obstacles []Point, width, height int) bool {
 	const maxGridSize = 30
@@ -42,7 +44,11 @@ func BFS(start, finish Point, obstacles []Point, width, height int) int {
 
 	// Create a queue with the start position and velocity (0, 0)
 	queue := newQueue(start)
-	visited := newVisitedGen()
+	visited := newVisited()
+	obstaclesMap := make(map[string]Point)
+	for _, obs := range obstacles {
+		obstaclesMap[obs.Key()] = obs
+	}
 
 	for !queue.isEmpty() {
 		current := queue.dequeue()
@@ -52,73 +58,55 @@ func BFS(start, finish Point, obstacles []Point, width, height int) int {
 			return current.hops // Return the number of hops
 		}
 
-		visited.add(current.hops, current.position)
+		visited.add(current.position)
 
+		wg := new(sync.WaitGroup)
 		// Generate velocities within the restricted range
 		for dx := -1; dx <= 1; dx++ {
 			for dy := -1; dy <= 1; dy++ {
-				newVelocity := Velocity{current.velocity.dx + dx, current.velocity.dy + dy}
-				newPosition := Point{current.position.X + newVelocity.dx, current.position.Y + newVelocity.dy}
+				dx := dx
+				dy := dy
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					newVelocity := Velocity{current.velocity.dx + dx, current.velocity.dy + dy}
+					newPosition := Point{current.position.X + newVelocity.dx, current.position.Y + newVelocity.dy}
 
-				// Check if the new position is within the grid, not occupied by an obstacle,
-				// not visited and the new velocity is within the restricted range.
-				// If all conditions are met, enqueue the new position and velocity.
-				if newVelocity.IsWithinRange() &&
-					newPosition.IsWithinRange(width, height) &&
-					!newPosition.IsOccupied(obstacles) &&
-					!current.IsVisited(newPosition) &&
-					!visited.isVisited(current.hops, newPosition) {
+					// Check if the new position is within the grid, not occupied by an obstacle,
+					// not visited and the new velocity is within the restricted range.
+					// If all conditions are met, enqueue the new position and velocity.
+					if newVelocity.IsWithinRange() &&
+						newPosition.IsWithinRange(width, height) &&
+						!newPosition.IsOccupiedMap(obstaclesMap) &&
+						!visited.isVisited(newPosition) {
 
-					queue.enqueue(queueItem{newPosition, newVelocity, current.hops + 1, current.visited})
-				}
+						queue.enqueue(queueItem{newPosition, newVelocity, current.hops + 1, current.visited})
+					}
+				}()
 			}
 		}
+
+		wg.Wait()
 	}
 
 	return -1 // No solution
 }
 
 type visitedGen struct {
-	visited map[int]map[string]struct{}
+	visited map[string]struct{}
 }
 
-func newVisitedGen() *visitedGen {
-	return &visitedGen{visited: map[int]map[string]struct{}{}}
+func newVisited() *visitedGen {
+	return &visitedGen{visited: map[string]struct{}{}}
 }
 
-func (vg *visitedGen) add(gen int, p Point) {
-	if vg.visited[gen] == nil {
-		vg.visited[gen] = map[string]struct{}{}
-	}
-
-	vg.visited[gen][p.Key()] = struct{}{}
+func (vg *visitedGen) add(p Point) {
+	vg.visited[p.Key()] = struct{}{}
 }
 
-func (vg *visitedGen) isVisited(gen int, p Point) bool {
-	newGen := gen
-	if newGen < 0 {
-		return false
+func (vg *visitedGen) isVisited(p Point) bool {
+	if _, ok := vg.visited[p.Key()]; ok {
+		return true
 	}
-
-	if vg.visited[newGen] == nil {
-		return false
-	}
-
-	for g := newGen; g >= 0; g-- {
-		if _, ok := vg.visited[g][p.Key()]; ok {
-			return true
-		}
-	}
-
 	return false
-}
-
-// sign returns the sign of an integer
-func sign(x int) int {
-	if x > 0 {
-		return 1
-	} else if x < 0 {
-		return -1
-	}
-	return 0
 }

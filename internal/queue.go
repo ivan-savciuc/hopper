@@ -1,6 +1,10 @@
 package internal
 
-import "golang.org/x/exp/maps"
+import (
+	"sync"
+
+	"golang.org/x/exp/maps"
+)
 
 // queueItem represents an item in the queue.
 type queueItem struct {
@@ -11,18 +15,22 @@ type queueItem struct {
 }
 
 // IsVisited checks if the point has been visited.
-func (qi queueItem) IsVisited(p Point) bool {
+func (qi *queueItem) IsVisited(p Point) bool {
 	_, ok := qi.visited[p.Key()]
 	return ok
 }
 
 // queue represents a queue of items.
 type queue struct {
+	sync.RWMutex
 	items []queueItem
 }
 
 // enqueue adds an item to the queue.
 func (q *queue) enqueue(item queueItem) {
+	q.Lock()
+	defer q.Unlock()
+
 	visited := make(map[string]struct{})
 	maps.Copy(visited, item.visited)
 	visited[item.position.Key()] = struct{}{}
@@ -33,13 +41,19 @@ func (q *queue) enqueue(item queueItem) {
 
 // dequeue removes an item from the queue.
 func (q *queue) dequeue() queueItem {
+	q.Lock()
+	defer q.Unlock()
+
 	item := q.items[0]
 	q.items = q.items[1:]
 	return item
 }
 
 // isEmpty checks if the queue is empty.
-func (q queue) isEmpty() bool {
+func (q *queue) isEmpty() bool {
+	q.RLock()
+	defer q.RUnlock()
+
 	return len(q.items) == 0
 }
 
@@ -49,6 +63,8 @@ func newQueue(start Point) *queue {
 }
 
 // Count returns the number of items in the queue.
-func (q queue) Count() int {
+func (q *queue) Count() int {
+	q.RLock()
+	defer q.RUnlock()
 	return len(q.items)
 }
