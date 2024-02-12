@@ -45,6 +45,8 @@ func BFS(start, finish Point, obstacles []Point, width, height int) int {
 	// Create a queue with the start position and velocity (0, 0)
 	queue := newQueue(start)
 	visited := newVisited()
+
+	// Convert the obstacles to a map for faster lookups
 	obstaclesMap := make(map[string]Point)
 	for _, obs := range obstacles {
 		obstaclesMap[obs.Key()] = obs
@@ -61,6 +63,7 @@ func BFS(start, finish Point, obstacles []Point, width, height int) int {
 		visited.add(current.position)
 
 		wg := new(sync.WaitGroup)
+
 		// Generate velocities within the restricted range
 		for dx := -1; dx <= 1; dx++ {
 			for dy := -1; dy <= 1; dy++ {

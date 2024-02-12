@@ -15,7 +15,7 @@ type queueItem struct {
 }
 
 // IsVisited checks if the point has been visited.
-func (qi *queueItem) IsVisited(p Point) bool {
+func (qi queueItem) IsVisited(p Point) bool {
 	_, ok := qi.visited[p.Key()]
 	return ok
 }
